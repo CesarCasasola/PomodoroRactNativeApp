@@ -1,7 +1,10 @@
 import React from 'react';
-import { StyleSheet, Text, View, Button } from 'react-native';
+import { StyleSheet, Text, View, Button, TouchableOpacity, Image } from 'react-native';
+import CircularProgress from './CircularProgressBar.js';
+import {vibrate} from './utils';
 
 const workingMins = 0.5;
+const restingMins = 0.5;
 
 export default class App extends React.Component {
 
@@ -12,8 +15,8 @@ export default class App extends React.Component {
       situation: 0,
       secsToComplete: workingMins*60,
       remaining: {
-        mins: 0,
-        secs: 0,
+        mins: Math.floor(workingMins),
+        secs: workingMins*60%60,
       },
       pomodorosInRow: 0,
     }
@@ -23,35 +26,63 @@ export default class App extends React.Component {
     if(this.state.situation === 0){
       return (
         <View style={styles.container}>
-          <Button title="Start" onPress={this.startPomodoro}></Button>
+        <View style={styles.buttonPanel}>
+          <TouchableOpacity  onPress={this.startPomodoro}  style={styles.buttonPrimary}>
+            <Image source={require('./assets/tomato.png')}/>
+            <Text style={styles.buttonText}>Start Pomodoro</Text>
+          </TouchableOpacity>
+        </View>          
         </View>
       );
     }else if(this.state.situation === 1){
       const digits = this.displayDigits()
+      const percent = (((workingMins*60) - this.state.secsToComplete) / (workingMins*60))*100 ; 
       return (
       <View style={styles.container}>
-          <Text>Focus</Text>
-          <Text>{digits}</Text>
-          <Button title="Pause" onPress={this.pausePomodoro}></Button>
-          <Button title="Stop" onPress={this.stopPomodoro}></Button>          
+          <Text style={styles.messageText}>Focus</Text>
+          <View style={styles.timerContainer}>
+            <CircularProgress percent={percent} clock={digits}/>
+          </View>
+          <View style={styles.controlButtonPanel}>
+            <TouchableOpacity onPress={this.pausePomodoro} style={styles.controlButton}>
+              <Text style={styles.buttonText}>Pause</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={this.stopPomodoro} style={styles.controlButton}>
+              <Text style={styles.buttonText}>Stop</Text>
+            </TouchableOpacity>
+          </View>                  
       </View>
       )
     }else if(this.state.situation === 2){
       const digits = this.displayDigits()
+      const percent = (((workingMins*60) - this.state.secsToComplete) / (workingMins*60))*100 ; 
       return(
         <View style={styles.container}>
-          <Text>{digits}</Text>
-          <Button title="Resume" onPress={this.resumePomodoro}></Button>
-          <Button title="Stop" onPress={this.stopPomodoro}></Button>          
+          <View style={styles.timerContainer}>
+            <CircularProgress percent={percent} clock={digits}/>
+          </View>
+          <View style={styles.controlButtonPanel}>
+            <TouchableOpacity onPress={this.resumePomodoro} style={styles.controlButton}>
+              <Text style={styles.buttonText}>Resume</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={this.stopPomodoro} style={styles.controlButton}>
+              <Text style={styles.buttonText}>Stop</Text>
+            </TouchableOpacity>    
+          </View>           
         </View>
       )
     }else {
       const digits = this.displayDigits()
+      const percent = (((restingMins*60) - this.state.secsToComplete) / (restingMins*60))*100 ; 
       return(
         <View style={styles.container}>
-          <Text>Rest</Text>
-          <Text>{digits}</Text>
-          <Button title="Stop" onPress={this.stopPomodoro}></Button>          
+          <Text style={styles.messageText}>Rest</Text>
+          <View style={styles.timerContainer}>
+            <CircularProgress percent={percent} clock={digits}/>
+          </View>
+          <TouchableOpacity onPress={this.stopPomodoro} style={styles.controlButton}>
+            <Text style={styles.buttonText}>Stop</Text>
+          </TouchableOpacity>          
         </View>
       )
     }
@@ -80,6 +111,10 @@ export default class App extends React.Component {
     this.setState({
       secsToComplete: workingMins*60,
       situation: 0,
+      remaining: {
+        mins: Math.floor(workingMins),
+        secs: workingMins*60%60,
+      }
     })
     clearInterval(this.interval)
 
@@ -99,10 +134,14 @@ export default class App extends React.Component {
           },
         }));
       }else{
+        this.setState({
+          pomodorosInRow: this.state.pomodorosInRow+1,
+        })
+        vibrate();
         if(this.state.situation === 1){
           this.setState({
             situation: 3,
-            secsToComplete: 0.5*60,
+            secsToComplete: restingMins*60,
           })
         }else if(this.state.situation === 3){
           this.setState({
@@ -140,8 +179,58 @@ export default class App extends React.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
+    backgroundColor: '#80e27e',
     justifyContent: 'center',
   },
+  buttonPanel: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignContent: 'stretch',
+  },
+  buttonPrimary: {
+    alignItems: 'center',
+    padding: 10,
+    width: '80%',
+    borderRadius: 20,
+  },
+  buttonText: {
+    fontSize: 20,
+    color: '#255d00',
+    fontWeight: 'bold',
+  },
+  controlButtonPanel: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 20,    
+  },
+  controlButton: {
+    backgroundColor: 'white',    
+    paddingLeft: 25,
+    paddingRight: 25,
+    paddingTop: 15,
+    paddingBottom: 15,
+    borderRadius: 20,
+    alignItems: 'center',
+    shadowColor: 'green',
+    shadowOffset: {
+      width: 2,
+      height: 2,
+    }
+  }, 
+  messageText: {
+    color: 'white',
+    fontSize: 30,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowOffset: {
+      width: 3,
+      height: 3,
+    },
+    textShadowColor: 'green',
+  },
+  timerContainer: {
+    alignItems: 'center',
+    padding: 50,
+  }
 });
+
